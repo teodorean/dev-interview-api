@@ -11,7 +11,8 @@ public class testConn {
 
 	public static void main(String[] args) {
 		DBConnection dbConn = new DBConnection();
-		dbConn.createTransaction(1000.0, "phone", 18);
+		//dbConn.createCorporate("Apple", "1263151", "123 Main Rd");
+		System.out.println(dbConn.fetchTransactions("246").get(0).getDesc());
 	}
 
 }

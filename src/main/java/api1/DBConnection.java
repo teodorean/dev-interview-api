@@ -19,11 +19,14 @@ public class DBConnection {
 		turnOnforeignKeys();
 	}
 	
+	/*
+	 * if id is empty string, return all buyers
+	 * otherwise return a list with just one buyer, the one with the corresponding id
+	 */
 	public List<Buyer> fetchBuyers(String id){
 		String sql = "SELECT * FROM Buyer"; 
 		if (!id.isEmpty()){
 			sql = sql + " WHERE id = " + id;
-			System.out.println(sql);
 		}
 		List<Buyer> buyerList = new ArrayList<Buyer>();
         try {              
@@ -42,7 +45,10 @@ public class DBConnection {
         } 
         return buyerList;
 	}
-	
+	/*
+	 * return a list of all transaction numbers belonging to a buyer
+	 * used to display a users list of transactions made
+	 */
 	public List<Integer> fetchTransactionIDs(Buyer buyer){
 		int custID = buyer.getId();
 		String sql = "SELECT transactionNumber FROM Transaction1 WHERE custID = " + custID; 
@@ -59,11 +65,13 @@ public class DBConnection {
         } 
         return transactionNumberList;
 	}
-	
+	/*
+	 * same principle as fetchBuyers()
+	 */
 	public List<Transaction> fetchTransactions(String id){
 		String sql = "SELECT * FROM Transaction1"; 
 		if (!id.isEmpty()){
-			sql = sql + "WHERE id = " + id;
+			sql = sql + " WHERE id = " + id;
 		}
 		List<Transaction> transactionList = new ArrayList<Transaction>();
         try {              
@@ -81,7 +89,10 @@ public class DBConnection {
         return transactionList;
 	}
 	
-	
+	/*
+	 * returns the greatest value of a given column from a given table
+	 * used for generating new buyer ids, new transaction ids and transaction numbers
+	 */
 	public int fetchGreatest(String column, String table){
 		String sql = "SELECT MAX(" + column + ") AS " + column + " FROM " + table;
 		int greatest=0;
@@ -95,29 +106,38 @@ public class DBConnection {
         } 
         return greatest;
 	}
-	
+	/*
+	 * creates and returns new corporate buyer
+	 * calls addBuyer
+	 */
 	public Buyer createCorporate(String buyerName, String persID, String address){
 		int newID = fetchGreatest("id", "Buyer") + 1;
 		Buyer newBuyer = new Buyer(newID, true, buyerName, 0, persID, "", address);
-		addBuyer(newBuyer);
+		if(!addBuyer(newBuyer)) return null;
 		return newBuyer;
 	}
-	
+	/*
+	 * creates and returns new indiv. buyer
+	 * calls addBuyer
+	 */
 	public Buyer createIndividual(String buyerName, String persID){
 		int newID = fetchGreatest("id", "Buyer") + 1;
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 		LocalDate localDate = LocalDate.now();
 		String dateReg = dtf.format(localDate);
 		Buyer newBuyer = new Buyer(newID, false, buyerName, 0, persID, dateReg, "");
-		addBuyer(newBuyer);
+		if(!addBuyer(newBuyer)) return null;
 		return newBuyer;
 	}
-	
-	public void addBuyer(Buyer buyer){
+	/*
+	 * adds a newly created buyer to the database
+	 */
+	public boolean addBuyer(Buyer buyer){
 		String sql = "INSERT INTO Buyer (id, corporate, buyerName, value, persID, dateRegistered, address) VALUES (?,?,?,?,?,?,?)";
 				//buyer.getId() + ", " + buyer.isCorporate() + ", " + buyer.getBuyerName() + ", " +
 				//buyer.getValue() + ", " + buyer.getPersID() + ", " + buyer.getDateReg() + ", " +
 				//buyer.getAddress() + ";";
+		boolean isAdded = true;
 		try{
 			PreparedStatement stmt = conn.prepareStatement(sql);
 			stmt.setInt(1, buyer.getId());
@@ -129,23 +149,33 @@ public class DBConnection {
 			stmt.setString(7, buyer.getAddress());
 			
 			stmt.execute();
+			
 		
 		} catch (SQLException e) {  
-            System.out.println(e.getMessage());  
+            System.out.println(e.getMessage());
+            isAdded = false;
         } 
+		return isAdded;
 	}
-	
+	/*
+	 * creates and returns new transaction
+	 * calls addTransaction
+	 */
 	public Transaction createTransaction(double value, String desc, int custID){
 		int newID = fetchGreatest("id", "Transaction1") + 1;
 		int newTrID = fetchGreatest("transactionNumber", "Transaction1") + 1;
 		Transaction newTr = new Transaction(newID, newTrID, value, desc, custID);
-		addTransaction(newTr);
+		if(!addTransaction(newTr)) return null;
 		return newTr;
 	}
-
-	public void addTransaction(Transaction newTr) {
+	/*
+	 * adds new transaction to database
+	 * calls updateBuyerValue
+	 */
+	public boolean addTransaction(Transaction newTr) {
 		String sql1 = "INSERT INTO Transaction1 (id, transactionNumber, value, desc, custID)"
 				+ "VALUES (?,?,?,?,?)";
+		boolean isAdded = true;
 		
 		try{
 			PreparedStatement stmt = conn.prepareStatement(sql1);
@@ -158,11 +188,15 @@ public class DBConnection {
 			updateBuyerValue(newTr.getCustID(), newTr.getValue());
 		
 		} catch (SQLException e) {  
-            System.out.println(e.getMessage());  
+            System.out.println(e.getMessage());
+            isAdded = false;
         } 
-		
+		return isAdded;
 	}
-
+	/*
+	 * is called whenever a new transaction is made
+	 * adds transaction value to the corresponding buyer's value
+	 */
 	public void updateBuyerValue(int custID, double trValue) {
 		String sql1 = "SELECT value from Buyer WHERE id = " + custID;
 		String sql2 = "UPDATE Buyer SET value = ? WHERE id = ?";
@@ -179,7 +213,11 @@ public class DBConnection {
             System.out.println(e.getMessage());  
         } 
 	}
-	
+	/*
+	 * updates a buyers details
+	 * if buyer is corporate, it takes in a potential new address
+	 * if buyer is individual, address will still remain as empty string
+	 */
 	public Buyer changeDetails(int id, String buyerName, String persID, String address, boolean isCorp){
 		String sql = "UPDATE Buyer SET buyerName = ?, persID = ?, address = ? WHERE id = ?";
 		Buyer buyer = fetchBuyers(Integer.toString(id)).get(0);
@@ -206,6 +244,11 @@ public class DBConnection {
 		return buyer;
 	}
 	
+	/*
+	 * removes a buyer
+	 * requires buyer id and personal ID
+	 * returns true if it deletes a buyer, false otherwise
+	 */
 	public boolean deleteBuyer(int id, String persID){
 		Buyer buyer = fetchBuyers(Integer.toString(id)).get(0);
 		
@@ -228,7 +271,10 @@ public class DBConnection {
 		}
 		return true;
 	}
-	
+	/*
+	 * check if a personal ID corresponds to the buyer id
+	 * used when deleting a buyer
+	 */
 	public boolean checkPersID(int id, String persID){
 		String sql = "SELECT id FROM Buyer WHERE id = ? and persID = ?";
 		int dbID=0;
@@ -248,7 +294,10 @@ public class DBConnection {
 		}
 		return false;
 	}
-	
+	/*
+	 * deletes the transaction with the corresponding id
+	 * called on all of a buyers transactions before buyer is deleted
+	 */
 	public boolean deleteTransaction(int id){
 		String sql = "DELETE from Transaction1 where transactionNumber = ?";
 		try {
