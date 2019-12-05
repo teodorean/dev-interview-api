@@ -37,7 +37,7 @@ public class ControllerTests {
 	}
 	
 	@Test
-	public void AcreatedCorporateTest(){		
+	public void AgetOneCorporateTest(){		
 		int corpBuyerId = corpBuyer.getId();
 		String corpBuyerName = dbConn.fetchBuyers(Integer.toString(corpBuyerId)).get(0).getBuyerName();
 		assertTrue(corpBuyerName.equals("Apple"));
@@ -45,10 +45,23 @@ public class ControllerTests {
 	}
 	
 	@Test
-	public void AcreatedIndividualTest(){
+	public void AgetOneIndividualTest(){
 		int indBuyerId = individualBuyer.getId();
 		String indBuyerName = dbConn.fetchBuyers(Integer.toString(indBuyerId)).get(0).getBuyerName();
 		assertTrue(indBuyerName.equals("Ionel"));
+	}
+	
+	@Test
+	public void AgetAllBuyersTest(){
+		int corpBuyerId = corpBuyer.getId();
+		boolean tf = false;
+		List<Buyer> bList = dbConn.fetchBuyers("");
+		for (Buyer b : bList){
+			if (b.getId()==corpBuyerId){
+				tf = true;
+			}
+		}
+		assertTrue(tf);
 	}
 	
 	@Test
@@ -69,36 +82,42 @@ public class ControllerTests {
 	
 	
 	@Test
-	public void CcreatedTransactionTest(){
+	public void CgetOneTransactionTest(){
 		List<Transaction> tList = dbConn.fetchTransactions(Integer.toString(tr1.getId()));
-		assertTrue(tList.get(0).getCustID() == (tr1.getCustID()));
+		assertEquals(tList.get(0).getCustID(), tr1.getCustID());
 	}
 	
 	@Test
 	public void CcheckBuyerValue(){
 		int corpBuyerId = corpBuyer.getId();
 		Double corpBuyerValue = dbConn.fetchBuyers(Integer.toString(corpBuyerId)).get(0).getValue();
-		assertTrue(corpBuyerValue == 650);
+		assertTrue(corpBuyerValue == 650.0);
 	}
 	
 	
 	@Test
-	public void ZdeleteCorporateTest(){
+	public void YdeleteCorporateTest(){
 		boolean tf = dbConn.deleteBuyer(corpBuyer.getId(), corpBuyer.getPersID());
 		System.out.println(corpBuyer.getId());
 		assertTrue(tf);
 	}
 	
 	@Test
-	public void ZdeleteIndividualTest(){
+	public void YdeleteIndividualTest(){
 		boolean tf = dbConn.deleteBuyer(individualBuyer.getId(), individualBuyer.getPersID());
 		assertTrue(tf);
 	}
 	
 	@Test
-	public void ZdeleteFakeBuyerTest(){
+	public void YdeleteFakeBuyerTest(){
 		boolean tf = dbConn.deleteBuyer(individualBuyer.getId(), "12");
 		assertFalse(tf);
+	}
+	
+	@Test
+	public void ZcheckIfTransactionWasDeleted(){
+		List<Transaction> tList = dbConn.fetchTransactions(Integer.toString(tr1.getId()));
+		assertTrue(tList.isEmpty());
 	}
 	
 

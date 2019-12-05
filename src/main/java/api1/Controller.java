@@ -133,6 +133,7 @@ public class Controller {
      * requires buyer id as path variable and body of type json
      * one field for personal id
      * automatically deletes all transactions belonging to the buyer
+     * returns true if a buyer was deleted or false is buyer does not exist or details are not correct
      */
     @DeleteMapping("/buyer/{id}")
     public boolean deleteBuyer(@PathVariable String id, @RequestBody Map<String, String> body){

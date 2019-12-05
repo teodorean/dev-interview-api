@@ -213,6 +213,7 @@ public class DBConnection {
             System.out.println(e.getMessage());  
         } 
 	}
+	
 	/*
 	 * updates a buyers details
 	 * if buyer is corporate, it takes in a potential new address
@@ -250,7 +251,13 @@ public class DBConnection {
 	 * returns true if it deletes a buyer, false otherwise
 	 */
 	public boolean deleteBuyer(int id, String persID){
-		Buyer buyer = fetchBuyers(Integer.toString(id)).get(0);
+		Buyer buyer;
+		try{
+			buyer = fetchBuyers(Integer.toString(id)).get(0);
+		} catch (IndexOutOfBoundsException e){
+			System.out.println("buyer does not exist");
+			return false;
+		}
 		
 		if (!checkPersID(id,persID)) return false;
 		
